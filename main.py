@@ -74,3 +74,4 @@ plots_reconstructed_fluence(
                            dict_image_preprocessing,dict_mesh,dict_GSA,
                            max_radius_for_plot,relative_vmin=0,relative_vmax=0.7,
                            polar_plot_shading="nearest")
+
