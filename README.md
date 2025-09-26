@@ -74,14 +74,11 @@ their participation in any subsequent publication or or presentation.
 
 ### References
 
-.. [GSA1972] 
-    R. W. Gerchberg, and W. O. Saxton, A practical algorithm for the determination of the phase from image and diffraction plane pictures, Optik 35, 237 (1972).
+[GSA1972] R. W. Gerchberg, and W. O. Saxton, A practical algorithm for the determination of the phase from image and diffraction plane pictures, Optik 35, 237 (1972).
 
-.. [Moulanier2023a] 
-    I. Moulanier et al, Fast laser field reconstruction method based on a Gerchberg–Saxton algorithm with mode decomposition, Journal of the Optical Society of America B, 40, 9, 2450 (2022), https://doi.org/10.1364/JOSAB.489884`
+[Moulanier2023a] I. Moulanier et al, Fast laser field reconstruction method based on a Gerchberg–Saxton algorithm with mode decomposition, Journal of the Optical Society of America B, 40, 9, 2450 (2022), https://doi.org/10.1364/JOSAB.489884`
 
-.. [Moulanier2023b] 
-    I. Moulanier et al., Modeling of the driver transverse profile for laser wakefield electron acceleration at APOLLON research facility, Physics of Plasmas 30, 053109 (2023) https://doi.org/10.1063/5.0142894
+[Moulanier2023b] I. Moulanier et al., Modeling of the driver transverse profile for laser wakefield electron acceleration at APOLLON research facility, Physics of Plasmas 30, 053109 (2023) https://doi.org/10.1063/5.0142894
 
 
 
