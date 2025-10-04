@@ -23,7 +23,7 @@ Ioaquin Moulanier implemented the GSA-MD in Python for his PhD thesis at the Lab
 Francesco Massimo at LPGP worked on the implementation shared in this GitHub repository and 
 on its formulation in cylindrical geometry with the Laguerre-Gauss modes.
 
-The code benefitted also from contributions to the diagnostic and postprocessing scripts by Adrian Guerente, Mohamad Masckala, Oleksandra Khomyshyn and Steyn Lodewyn Theunis.
+The code benefitted also from contributions to the diagnostic and postprocessing scripts by Adrian Guerente, Mohamad Masckala, Oleksandra Khomyshyn and Steyn Theunis Lodewyk.
 
 ### Installation 
 The GSA-MD implementation in this repository is written in Python.
