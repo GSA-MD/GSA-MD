@@ -5,7 +5,7 @@
 import numpy as np
 import os,sys
 from scipy import signal
-from numba import njit
+#from numba import njit
 
 
 def check_GSA_inputs(dict_image_preprocessing,dict_GSA):
