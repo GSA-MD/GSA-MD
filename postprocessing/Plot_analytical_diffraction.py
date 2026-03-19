@@ -144,7 +144,7 @@ for i_plane in range(np.size(x_propagation_planes)):
         # it is assumed that helical LG modes are used,
         # i.e. with an azimuthal variation exp(i*l*theta)
         for l in range(-dict_mode_basis["Max_LG_index_l"], dict_mode_basis["Max_LG_index_l"] + 1):
-            # negative l indices are stored with the FFT convention for negative frequencies
+            # negative l indices are stored after the positive l indices, with increasing |l|
             l_index = l if l >= 0 else dict_mode_basis["Max_LG_index_l"] + abs(l)
             # sum the x,r part of the modes with the same l index and different radial p indices
             Ey_axis_y_radial = np.zeros(shape=(1,np.size(y_mesh)),dtype=complex)

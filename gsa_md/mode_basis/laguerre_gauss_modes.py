@@ -252,23 +252,22 @@ def project_field_on_LG_modes(field,i_plane,dict_image_preprocessing,dict_mesh,d
     return Coeffs_LG_pl
 
 def compute_helical_LG_coefficients_no_numba(Coeffs_LG_pl, Max_LG_index_l, energy_reference_plane, field, LG_fields_at_x_r, LG_fields_at_theta, dtheta, r_mesh, dr):
-    # For the helical LG, as in a FFT, the negative l harmonics are stored after the ones for l>=0, with increasingly negative l.
+    # For the helical LG, the l positive indices are stored, then the negative indices with increasing |l|, e.g. 0,1,2,-1,-2
     integrand                            = field[np.newaxis,np.newaxis,:,:]              * np.conjugate(LG_fields_at_x_r  [:,0:(Max_LG_index_l+1),:,np.newaxis]) 
     integrand                            = integrand                                     * r_mesh[np.newaxis, np.newaxis,:,np.newaxis] * dr
     # l >= 0
     Coeffs_LG_pl[:,0:(Max_LG_index_l+1)] = np.sum( integrand[:,0:(Max_LG_index_l+1),:,:] * np.conjugate(LG_fields_at_theta[np.newaxis,0:(Max_LG_index_l+1),np.newaxis,:]) ,axis=(2,3)) * dtheta 
-    # l < 0, Rember that the LG_fields_at_theta for -l is the conjugate of LG_fields_at_theta of l, 
+    # l < 0, with increasing |l|. Rember that the LG_fields_at_theta for -l is the conjugate of LG_fields_at_theta of l, 
     # and that LG_fields_at_x_r only depends on p, |l| 
     Coeffs_LG_pl[:,(Max_LG_index_l+1)::] = np.sum( integrand[:,1:(Max_LG_index_l+1),:,:] *             (LG_fields_at_theta[np.newaxis,1:(Max_LG_index_l+1),np.newaxis,:]) ,axis=(2,3)) * dtheta 
-
-    # As in a FFT, the negative l harmonics are stored after the ones for l>=0, with increasingly negative l.
+    
     # Normalize the new Coeff_LG_pl
     Coeffs_LG_pl = Coeffs_LG_pl * np.sqrt(energy_reference_plane) / np.sqrt(np.sum(np.absolute(Coeffs_LG_pl)**2)) 
 
     return Coeffs_LG_pl
 
 def compute_sinusoidal_LG_coefficients_no_numba(Coeffs_LG_pl, Max_LG_index_l, energy_reference_plane, field, LG_fields_at_x_r, LG_fields_at_theta, dtheta, r_mesh, dr):
-    # As in a FFT, the negative l harmonics are stored after the ones for l>=0, with increasingly negative l.
+    # negative l harmonics are stored after the positive ones, with increasing |l|
     integrand                            = field[np.newaxis,np.newaxis,:,:]              * np.conjugate(LG_fields_at_x_r  [:,0:(Max_LG_index_l+1),:,np.newaxis]) 
     integrand                            = integrand                                     * r_mesh[np.newaxis, np.newaxis,:,np.newaxis] * dr
     # l >= 0
@@ -276,8 +275,7 @@ def compute_sinusoidal_LG_coefficients_no_numba(Coeffs_LG_pl, Max_LG_index_l, en
     # l < 0, Rember that the LG_fields_at_theta for -l is the conjugate of LG_fields_at_theta of l, 
     # and that LG_fields_at_x_r only depends on p, |l| 
     Coeffs_LG_pl[:,(Max_LG_index_l+1)::] = np.sum( integrand[:,1:(Max_LG_index_l+1),:,:] * np.imag(LG_fields_at_theta[np.newaxis,1:(Max_LG_index_l+1),np.newaxis,:]) ,axis=(2,3)) * dtheta 
-
-    # As in a FFT, the negative l harmonics are stored after the ones for l>=0, with increasingly negative l.
+    
     # Normalize the new Coeff_LG_pl
     Coeffs_LG_pl = Coeffs_LG_pl * np.sqrt(energy_reference_plane) / np.sqrt(np.sum(np.absolute(Coeffs_LG_pl)**2)) 
 
@@ -289,7 +287,7 @@ def compute_helical_LG_coefficients_numba(Coeffs_LG_pl, Max_LG_index_l, energy_r
     # Precompute common multipliers
     r_mesh_dr_dtheta = r_mesh * dr * dtheta
     
-    # For the helical LG, as in a FFT, the negative l harmonics are stored after the ones for l>=0, with increasingly negative l.
+    # negative l harmonics are stored after the positive ones, with increasing |l|
 
     # using prange only for independent loop iterations to avoid race conditions
     for p in prange(LG_fields_at_x_r.shape[0]):
@@ -323,29 +321,27 @@ def compute_sinusoidal_LG_coefficients_numba(Coeffs_LG_pl, Max_LG_index_l, energ
 
     # Precompute common multipliers
     r_mesh_dr_dtheta = r_mesh * dr * dtheta
-    
-    # As in a FFT, the negative l harmonics are stored after the ones for l>=0, with increasingly negative l.
 
     # using prange only for independent loop iterations to avoid race conditions
     for p in prange(LG_fields_at_x_r.shape[0]):
-        # Positive l coefficients, in the sinusoidal LG they store the factor cos(l*theta)
+        # l coefficients for the sinusoidal LG modes with the factor cos(l*theta) in the field amplitude
         for l in prange(Max_LG_index_l + 1):
-            sum_pos_l = 0.0 + 0.0j  # Local accumulator for positive l
+            sum_cos_l = 0.0 + 0.0j  # Local accumulator the modes with cos(l*theta) in the amplitude
             for i_r in range(LG_fields_at_x_r.shape[2]):
                 for i_theta in range(LG_fields_at_theta.shape[1]):
-                    sum_pos_l += field[i_r, i_theta] * (LG_fields_at_x_r[p, l, i_r] * np.real(LG_fields_at_theta[l, i_theta])).conjugate() * r_mesh_dr_dtheta[i_r]
-            Coeffs_LG_pl[p, l] = sum_pos_l  # Update after accumulation
+                    sum_cos_l += field[i_r, i_theta] * (LG_fields_at_x_r[p, l, i_r] * np.real(LG_fields_at_theta[l, i_theta])).conjugate() * r_mesh_dr_dtheta[i_r]
+            Coeffs_LG_pl[p, l] = sum_cos_l  # Update after accumulation
 
     # using prange only for independent loop iterations to avoid race conditions
     for p in prange(LG_fields_at_x_r.shape[0]):
-        # Negative l coefficients, in the sinusoidal LG they store the factor sin(l*theta)
+        # l coefficients for the sinusoidal LG modes with the factor sin(l*theta) in the field amplitude
         for l in prange(1, Max_LG_index_l + 1):
-            neg_l_index = Max_LG_index_l + l
-            sum_neg_l = 0.0 + 0.0j  # Local accumulator for negative l
+            sin_l_index = Max_LG_index_l + l
+            sum_sin_l = 0.0 + 0.0j  # Local accumulator the modes with sin(l*theta) in the amplitude
             for i_r in range(LG_fields_at_x_r.shape[2]):
                 for i_theta in range(LG_fields_at_theta.shape[1]):
-                    sum_neg_l += field[i_r, i_theta] * LG_fields_at_x_r[p, l, i_r].conjugate() * np.imag(LG_fields_at_theta[l, i_theta]) * r_mesh_dr_dtheta[i_r]
-            Coeffs_LG_pl[p, neg_l_index] = sum_neg_l  # Update after accumulation
+                    sum_sin_l += field[i_r, i_theta] * LG_fields_at_x_r[p, l, i_r].conjugate() * np.imag(LG_fields_at_theta[l, i_theta]) * r_mesh_dr_dtheta[i_r]
+            Coeffs_LG_pl[p, neg_l_index] = sum_sin_l  # Update after accumulation
     
     # Normalize the coefficients
     mode_energy_sum  = np.sum(np.square(np.abs(Coeffs_LG_pl)))
@@ -374,7 +370,7 @@ def LG_reconstruct_field_at_plane(Coeffs_LG_pl,i_plane,dict_mode_basis):
     return E
 
 def reconstruct_helical_LG_E_no_numba(E, Max_LG_index_l, Coeffs_LG_pl, LG_fields_at_x_r, LG_fields_at_theta):
-    # For the helical LG, as in a FFT, the negative l harmonics are stored after the ones for l>=0, with increasingly negative l.
+    # negative l harmonics are stored after the positive ones, with increasing |l|
     # l >= 0
     E  = np.sum(Coeffs_LG_pl[:,0:(Max_LG_index_l+1),np.newaxis,np.newaxis]*LG_fields_at_x_r  [:,0:(Max_LG_index_l+1),:,np.newaxis]*LG_fields_at_theta[np.newaxis,0:(Max_LG_index_l+1),np.newaxis,:],axis=(0,1))
     # l < 0, Remember that the LG_fields_at_theta for -l is the conjugate of LG_fields_at_theta of l, 
@@ -383,12 +379,9 @@ def reconstruct_helical_LG_E_no_numba(E, Max_LG_index_l, Coeffs_LG_pl, LG_fields
     return E
 
 def reconstruct_sinusoidal_LG_E_no_numba(E, Max_LG_index_l, Coeffs_LG_pl, LG_fields_at_x_r, LG_fields_at_theta):
-    # As in a FFT, the negative l harmonics are stored after the ones for l>=0, with increasingly negative l.
-    # Positive l coefficients, for the sinusoidal LG modes they store the factor cos(l*theta)
-    # l >= 0
+    # l coefficients for the sinusoidal LG modes with the factor cos(l*theta) in the field amplitude
     E  = np.sum(Coeffs_LG_pl[:,0:(Max_LG_index_l+1),np.newaxis,np.newaxis]*LG_fields_at_x_r  [:,0:(Max_LG_index_l+1),:,np.newaxis]*np.real(LG_fields_at_theta[np.newaxis,0:(Max_LG_index_l+1),np.newaxis,:]),axis=(0,1))
-    # Negative l coefficients, for the sinusoidal LG modes they store the factor sin(l*theta)
-    # l < 0, remember that LG_fields_at_x_r only depends on p, |l| 
+    # l coefficients for the sinusoidal LG modes with the factor sin(l*theta) in the field amplitude
     E += np.sum(Coeffs_LG_pl[:,(Max_LG_index_l+1)::,np.newaxis,np.newaxis]*LG_fields_at_x_r  [:,1:(Max_LG_index_l+1),:,np.newaxis]*np.imag(LG_fields_at_theta[np.newaxis,1:(Max_LG_index_l+1),np.newaxis,:]),axis=(0,1))
     return E
     
@@ -399,7 +392,7 @@ def reconstruct_helical_LG_E_numba(E, Max_LG_index_l, Coeffs_LG_pl, LG_fields_at
         for i_theta in prange(LG_fields_at_theta.shape[1]):
             sum_E = 0.0 + 0.0j 
             for p in range(LG_fields_at_x_r.shape[0]):
-                # For the helical LG, as in a FFT, the negative l harmonics are stored after the ones for l>=0, with increasingly negative l.
+                # For the helical LG, the negative l harmonics are stored after the positive ones, with increasing |l|
                 # Positive l coefficients
                 for l in range(Max_LG_index_l + 1):
                     sum_E += Coeffs_LG_pl[p, l] * LG_fields_at_x_r[p, l, i_r] * LG_fields_at_theta[l, i_theta]
@@ -420,11 +413,10 @@ def reconstruct_sinusoidal_LG_E_numba(E, Max_LG_index_l, Coeffs_LG_pl, LG_fields
         for i_theta in prange(LG_fields_at_theta.shape[1]):
             sum_E = 0.0 + 0.0j 
             for p in range(LG_fields_at_x_r.shape[0]):
-                # As in a FFT, the negative l harmonics are stored after the ones for l>=0, with increasingly negative l.
-                # Positive l coefficients, for the sinusoidal LG modes they store the factor cos(l*theta)
+                # l coefficients for the sinusoidal LG modes with the factor cos(l*theta) in the field amplitude
                 for l in range(Max_LG_index_l + 1):
                     sum_E += Coeffs_LG_pl[p, l] * LG_fields_at_x_r[p, l, i_r] * np.real(LG_fields_at_theta[l, i_theta])
-                # Negative l coefficients, for the sinusoidal LG modes they store the factor sin(l*theta)
+                # l coefficients for the sinusoidal LG modes with the factor sin(l*theta) in the field amplitude, with increasing order
                 # Remember that the LG_fields_at_x_r only depend on p, |l| 
                 for l in range(1, Max_LG_index_l + 1):
                     neg_l_index = Max_LG_index_l + l

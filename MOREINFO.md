@@ -182,10 +182,11 @@ The mode maximum indices are set by the user in
 
 The helical LG modes azimuthal indices span from `-dict_mode_basis["Max_LG_index_l"]` 
 to `dict_mode_basis["Max_LG_index_l"]`
-included, but they are stored with the same convention of a FFT (i.e. from `0` to `dict_mode_basis["Max_LG_index_l"]`, 
-and then for increasingly negative index). 
-The sinusoidal LG modes use the `cos(l * theta)` for positive `l` indices 
-and the `sin(l * theta)` for negative  `l` indices.
+included. Negative l indices are stored with increasing absolute value after the maximum positive index, 
+i.e. `0`, `1`, ..., `dict_mode_basis["Max_LG_index_l"]`, `-1`, `-2,`, ..., `-dict_mode_basis["Max_LG_index_l"]`.
+The sinusoidal LG modes store first the `l` indices of the modes with `cos(l * theta)` 
+in the field amplitude, then the `l` indices for the modes with `sin(l * theta)` in the amplitude,
+both with increasing order.
 
 Consequently, the total number of LG modes used for the reconstruction in 
 cylindrical geometry is 

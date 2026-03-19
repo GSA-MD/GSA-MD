@@ -94,7 +94,7 @@ my_dict_mode_basis       = store_LG_mode_basis_fields(lambda_0,my_dict_mesh,my_d
 #### Reconstruction of the field using the LG mode decomposition,
 #### using only the modes where this series it is truncated
 
-# For the helical LG, as in a FFT, the negative l harmonics are stored after the ones for l>=0, with increasingly negative l.
+# For the helical LG, the negative l harmonics are stored after the positie ones, with increasing |l|.
 # l >= 0
 E_field_cyl[:,:,:]       = np.sum(
                          Coeffs_LG_pl                            [0:my_dict_mode_basis["Max_LG_index_p"]+1,0:(my_dict_mode_basis["Max_LG_index_l"]+1),np.newaxis,np.newaxis,np.newaxis]
