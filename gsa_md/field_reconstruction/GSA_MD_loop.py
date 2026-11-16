@@ -57,7 +57,7 @@ def GSA_MD(dict_image_preprocessing,dict_mesh,dict_GSA):
                                                                    dict_mesh,
                                                                    dict_GSA["dict_mode_basis"]
                                                                    )
-                E_corrected           = correct_field_amplitude(E_reconstructed[:,:],field_amplitude_exp[i_plane, :, :],dict_image_preprocessing)
+                E_corrected           = correct_field_amplitude(E_reconstructed[:,:],field_amplitude_exp[i_plane, :, :],dict_image_preprocessing,i_plane)
 
 
                 # Compute the MD Coefficients at this plane as the scalar product between the 

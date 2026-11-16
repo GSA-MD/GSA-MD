@@ -115,9 +115,51 @@ in `dict_image_preprocessing["fluence_exp_images_cartesian"]`
 (and `dict_image_preprocessing["fluence_exp_images_circular"]` 
 if `dict_image_preprocessing["geometry"]="cylindrical"`).
 
-The user can specify a radius around the image center, called `dict_preprocessing["r_max_coordinate_change"]`, 
+The user can specify a radius around the image center, called `dict_image_preprocessing["r_max_coordinate_change"]` (in meters, default `np.inf`),
 beyond which the fluence is set to zero after the transfer to the grid 
-for the reconstruction.
+for the reconstruction. During the field reconstruction, the reconstructed field is also set to zero beyond this radius.
+The radius actually used is stored in `dict_image_preprocessing["r_max_effective"]`,
+together with `r_max_coordinate_change`, and it defines the mask `dict_image_preprocessing["inside_r_max"]`.
+Its value depends on the flag `dict_image_preprocessing["allow_partially_measured_planes"]` (default `False`),
+and on the distance between the center of each image and the nearest edge of that image
+(measured to the center of the last pixel).
+
+If `allow_partially_measured_planes = False`, all the points inside this radius must have been measured in all the images:
+otherwise the points outside the input images would be considered as measured data,
+filled with zeros or with the values at the image edges.
+Therefore:
+- if `r_max_coordinate_change` is larger than the distance between the center of an image
+and the nearest edge of that image, the program stops with an error message,
+indicating the plane that limits the radius and the largest acceptable value.
+In that case, choose a smaller `r_max_coordinate_change`, or improve the centering of the beam
+in the camera images (or use larger images), or set `allow_partially_measured_planes = True`;
+- if `r_max_coordinate_change` is not provided, `r_max_effective` is set to the largest radius
+around the image centers contained in all the images;
+- otherwise `r_max_effective = r_max_coordinate_change`.
+
+If `allow_partially_measured_planes = True`, a finite `r_max_coordinate_change` must be provided,
+and `r_max_effective = r_max_coordinate_change`.
+The disc of radius `r_max_effective` can then be partially outside some images (including the image at the reference plane):
+the points of the disc outside an image are treated as not measured.
+At those points, the reconstruction does not apply any amplitude correction towards the experimental fluence,
+i.e. the reconstructed field is left free to evolve, constrained only by the measured points of the other planes
+and by the field being zero beyond `r_max_effective`;
+at the reference plane in the GSA without mode decomposition, the amplitude of the reconstructed field is used at those points
+instead of the experimental one.
+The error of the fit is computed only on the measured points of each plane.
+For each plane, the points inside `r_max_effective` that were measured are stored in the boolean mask
+`dict_image_preprocessing["inside_r_max_and_measured"]` (with shape `(nx,nr,ntheta)` or `(nx,ny,nz)`),
+while the points of the converted images that were measured are stored in
+`dict_image_preprocessing["measured_region_circular"]` and/or `dict_image_preprocessing["measured_region_cartesian"]`.
+A warning lists the partially measured planes, and the fraction of the disc inside each of their images is printed.
+The grid used for the reconstruction must contain the whole disc of radius `r_max_effective`, otherwise the program stops with an error.
+Note that the total fluence of each image is still normalized to the total fluence of the image at the reference plane:
+the fluence of a partially measured image is therefore overestimated by the fraction of the energy outside that image,
+and if the reference plane is partially measured, the energy outside its image is not included in the normalization.
+This bias is small if only the low-fluence periphery of the beam is outside the images.
+Also, the larger the unmeasured regions, the less constrained the reconstruction.
+If `allow_partially_measured_planes = True` and all the images contain the whole disc of radius `r_max_effective`,
+the results are identical to those obtained with `allow_partially_measured_planes = False`.
 
 These fluence arrays have three indices:
 - plane index
@@ -240,7 +282,11 @@ normalized by the L2 norm of the experimental fluence) between the reconstructed
 and experimental image.
 
 The error is computed for the grid points where the distance from 
-the image center is smaller than `dict_preprocessing["r_max_coordinate_change"]`.
+the image center is smaller than `dict_image_preprocessing["r_max_effective"]`
+and which were measured in the image of that plane (see the Image preprocessing section).
+If `dict_image_preprocessing["allow_partially_measured_planes"] = True`, in the GSA without mode decomposition
+the amplitude of the field at the reference plane is also dumped at each output iteration, since in the points
+where the reference image was not measured it is not equal to the experimental one.
 
 After the last iteration, the reconstructed field and its lineouts on the `y` 
 and `z` axis are dumped as well in the dictionary `dict_GSA`.

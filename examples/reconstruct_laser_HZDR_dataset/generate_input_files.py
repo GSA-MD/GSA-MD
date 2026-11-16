@@ -66,19 +66,20 @@ index_reference_plane    = 2
 # in "cartesian" coordinates a HG mode reconstruction will be performed in cartesian coordinates;
 # in "cylindrical" coordinates a LG mode reconstruction will be performed.
 # A reconstruction not using the Mode decomposition is available only for "cartesian".
-geometry                 = "cartesian" #"cylindrical" 
+geometry                 = "cylindrical" #"cartesian" #"cylindrical" 
 
 # Dictionary for preprocessing
 dict_image_preprocessing = {
-                            "geometry"                 : geometry,
-                            "input_fluence_images"     : input_fluence_images,
-                            "length_per_pixel"         : length_per_pixel,
-                            "y0_at_planes"             : y0_at_planes,
-                            "z0_at_planes"             : z0_at_planes,
-                            "threshold"                : 5e-4,          # noise threshold for postprocessing, [fluence units] 1e-4
-                            "r_max_coordinate_change"  : 150e-6,        # [m] Radius above which fluence is set to zero in the preprocessing 
-                            "median_filter_size"       : 10,            # size in pixel of the 2D filter applied to the input images
-                            "index_reference_plane"    : index_reference_plane,
+                            "geometry"                        : geometry,
+                            "input_fluence_images"            : input_fluence_images,
+                            "length_per_pixel"                : length_per_pixel,
+                            "y0_at_planes"                    : y0_at_planes,
+                            "z0_at_planes"                    : z0_at_planes,
+                            "threshold"                       : 5e-4,          # noise threshold for postprocessing, [fluence units] 1e-4
+                            "r_max_coordinate_change"         : 100e-6,        # [m] Radius above which fluence is set to zero in the preprocessing (see allow_partially_measured_planes)
+                            "allow_partially_measured_planes" : True,          # if False, r_max_coordinate_change must not exceed the distance between an image center and the nearest image edge; if True, the points outside the images are treated as not measured
+                            "median_filter_size"              : 10,            # size in pixel of the 2D filter applied to the input images
+                            "index_reference_plane"           : index_reference_plane,
                            }       
 
 

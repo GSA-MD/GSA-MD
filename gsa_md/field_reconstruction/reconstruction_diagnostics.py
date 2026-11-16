@@ -30,6 +30,11 @@ def compute_error_and_dump_output(iter,dict_image_preprocessing,dict_mesh,dict_G
     
     # To compute errors, a boolean mask will be used, False where the distance from origin is larger than r_max 
     inside_r_max                           = dict_image_preprocessing["inside_r_max"    ]
+    # for each plane, False also where the image was not measured (see allow_partially_measured_planes)
+    if "inside_r_max_and_measured" in dict_image_preprocessing.keys():
+        inside_r_max_and_measured          = dict_image_preprocessing["inside_r_max_and_measured"]
+    else:
+        inside_r_max_and_measured          = np.broadcast_to(inside_r_max,(number_of_planes,)+inside_r_max.shape)
     
     
     error_fit                              = dict_GSA             ["error_fit"       ]
@@ -63,7 +68,14 @@ def compute_error_and_dump_output(iter,dict_image_preprocessing,dict_mesh,dict_G
         np.save("outputs/Phase_ref_plane_iteration_"+str(iter).zfill(5)+".npy" ,dict_GSA["phase_ref_plane"])
         ref_plane_index        = dict_image_preprocessing["index_reference_plane"]
         phase_ref_plane        = dict_GSA["phase_ref_plane"]
-        E_field_ref_plane      = dict_GSA["field_amplitude_exp "][ref_plane_index,:,:] * np.exp(1j*phase_ref_plane)
+        # the amplitude at the reference plane is the experimental one, except where the reference image was not measured
+        if "amplitude_ref_plane" in dict_GSA.keys():
+            amplitude_ref_plane = dict_GSA["amplitude_ref_plane"]
+        else:
+            amplitude_ref_plane = dict_GSA["field_amplitude_exp "][ref_plane_index,:,:]
+        if dict_image_preprocessing.get("allow_partially_measured_planes",False):
+            np.save("outputs/Amplitude_ref_plane_iteration_"+str(iter).zfill(5)+".npy" ,amplitude_ref_plane)
+        E_field_ref_plane      = amplitude_ref_plane * np.exp(1j*phase_ref_plane)
         
     for i_plane in range(number_of_planes):
         
@@ -91,8 +103,8 @@ def compute_error_and_dump_output(iter,dict_image_preprocessing,dict_mesh,dict_G
         # error_fit_at_plane[i_plane]       /= np.sum((weights_geometry*fluence_exp_images[i_plane,:,:])[inside_r_max])
         
         pointwise_error                    = np.abs((fluence_reconstruction-fluence_exp_images[i_plane,:,:])*weights_geometry)
-        error_fit_at_plane[i_plane]        = np.linalg.norm(pointwise_error[inside_r_max])
-        error_fit_at_plane[i_plane]       /= np.linalg.norm((weights_geometry*fluence_exp_images[i_plane,:,:])[inside_r_max])
+        error_fit_at_plane[i_plane]        = np.linalg.norm(pointwise_error[inside_r_max_and_measured[i_plane]])
+        error_fit_at_plane[i_plane]       /= np.linalg.norm((weights_geometry*fluence_exp_images[i_plane,:,:])[inside_r_max_and_measured[i_plane]])
                                                         
     if (iter==0):
         error_fit                          = error_fit_at_plane
@@ -251,7 +263,11 @@ def cartesian_geometry_save_reconstructed_fluence_and_lineouts_axis_y_and_z(dict
     else:
         ref_plane_index              = dict_image_preprocessing["index_reference_plane"]
         phase_ref_plane              = dict_GSA["phase_ref_plane"]
-        E_field_ref_plane            = dict_GSA["field_amplitude_exp "][ref_plane_index,:,:] * np.exp(1j*phase_ref_plane)
+        if "amplitude_ref_plane" in dict_GSA.keys():
+            amplitude_ref_plane      = dict_GSA["amplitude_ref_plane"]
+        else:
+            amplitude_ref_plane      = dict_GSA["field_amplitude_exp "][ref_plane_index,:,:]
+        E_field_ref_plane            = amplitude_ref_plane * np.exp(1j*phase_ref_plane)
     
     fluence_exp_cartesian            = dict_image_preprocessing["fluence_exp_images_cartesian"]
     ny                               = np.size(fluence_exp_cartesian[0,:,0])

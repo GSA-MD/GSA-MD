@@ -128,7 +128,7 @@ def gaussian_phase(dict_image_preprocessing,dict_mesh,dict_GSA):
     
     return dict_GSA  
     
-def correct_field_amplitude(E_reconstructed_this_plane,field_amplitude_exp_this_plane,dict_image_preprocessing):
+def correct_field_amplitude(E_reconstructed_this_plane,field_amplitude_exp_this_plane,dict_image_preprocessing,i_plane=None):
     
     # Correct the reconstructed field depending on how far its amplitude is from the experimental one
     # This step significantly accelerates the convergence
@@ -136,11 +136,18 @@ def correct_field_amplitude(E_reconstructed_this_plane,field_amplitude_exp_this_
     
     # To compute errors, a boolean mask called inside_r_max will be used, 
     # which is False where the distance from origin is larger than r_max 
+    # If the plane index i_plane is provided, the mask inside_r_max_and_measured of that plane is used instead,
+    # which is False also where the image was not measured (see allow_partially_measured_planes):
+    # no amplitude correction is applied in those points
+    if (i_plane is None) or ("inside_r_max_and_measured" not in dict_image_preprocessing.keys()):
+        mask_amplitude_correction                    = dict_image_preprocessing["inside_r_max"]
+    else:
+        mask_amplitude_correction                    = dict_image_preprocessing["inside_r_max_and_measured"][i_plane]
     delta                                            = np.square(field_amplitude_exp_this_plane) - np.square(np.abs(E_reconstructed_this_plane))
     # delta                                            = np.zeros_like(field_amplitude_exp_this_plane)
     # delta                                            = compute_delta_numba(delta,field_amplitude_exp_this_plane,E_reconstructed_this_plane)
     delta                                           /= np.amax(field_amplitude_exp_this_plane)**2  
-    delta[~dict_image_preprocessing["inside_r_max"]] = 0.  # how should we treat these points out of rmax?    #-np.inf # this will give np.exp(delta)=0 in these points
+    delta[~mask_amplitude_correction]                = 0.  # how should we treat these points out of rmax?    #-np.inf # this will give np.exp(delta)=0 in these points
     
     # this step is different from the corresponding one in I. Moulanier's paper on JOSAB (that was done to improve convergence too)
     # it is done on the reconstructed field 
